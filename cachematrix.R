@@ -14,14 +14,28 @@
 ## advantage of the scoping rules of the R language and how they can 
 ## be manipulated to preserve state inside of an R object.
 
-
 # makeVector: creates a special "vector", which is really a list containing a function to:
 # 1. set the value of the vector
 # 2. get the value of the vector
 # 3. set the value of the mean
 # 4. get the value of the mean
 makeCacheMatrix <- function(x = matrix()) {
-
+    
+    inverseVector <- NULL
+    
+    # get and set the matrix
+    get <- function() x
+    set <- function(y) {
+        x <<- y
+        inverseVector <<- NULL
+    }
+    
+    # get and set the inverse
+    getinv <- function() inverseVector
+    setinv <- function(inverse) inverseVector <<- inverse
+    
+    # Returns matrix with functions
+    list(set = set, get = get, setinv = setinv, getinv = getinv)
 }
 
 
@@ -31,5 +45,21 @@ makeCacheMatrix <- function(x = matrix()) {
 # computation. Otherwise, it calculates the mean of the data and sets the 
 # value of the mean in the cache via the setmean function.
 cacheSolve <- function(x, ...) {
-        ## Return a matrix that is the inverse of 'x'
+    inverseVector <- x$getinv()
+    
+    # simply return if the inverse is already set
+    if (!is.null(inverseVector)) {
+        message("returning cached data instead of caluculating")
+        return(inverseVector)
+    }
+    
+    # calculate the inverse
+    data <- x$get()
+    inverseVector <- solve(data, ...)
+    
+    # cache the inverseVector
+    x$setinv(inverseVector)
+    
+    # Return the vector
+    inverseVector
 }
